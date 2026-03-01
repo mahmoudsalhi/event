@@ -11,6 +11,7 @@ import tn.esprit.event.repository.EventRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -28,37 +29,54 @@ public class EventRegistrationService {
         registration.setEvent(event);
         registration.setRegistrationDate(LocalDateTime.now());
 
-        if (registration.getStatus() == null) {
-            registration.setStatus(RegistrationStatus.REGISTERED);
-        }
+        // Check if event is full → waitlist instead of register
+        boolean isFull = event.getMaxAttendees() != null
+                && (event.getCurrentAttendees() != null ? event.getCurrentAttendees() : 0)
+                        >= event.getMaxAttendees();
 
-        // Increment current attendees on the event
-        event.setCurrentAttendees(
-                (event.getCurrentAttendees() != null ? event.getCurrentAttendees() : 0) + 1
-        );
-        eventRepository.save(event);
+        if (isFull) {
+            // ── WAITLIST ──
+            registration.setStatus(RegistrationStatus.WAITLISTED);
+            // Do NOT increment attendee count for waitlisted users
 
-        EventRegistration saved = registrationRepository.save(registration);
+            EventRegistration saved = registrationRepository.save(registration);
 
-        // Send confirmation email (non-blocking: don't let email failure break registration)
-        try {
-            if (registration.getUserEmail() != null && !registration.getUserEmail().isBlank()) {
-                emailService.sendRegistrationConfirmation(
-                        registration.getUserEmail(),
-                        registration.getUserName() != null ? registration.getUserName() : "there",
-                        event.getTitle(),
-                        event.getStartDate(),
-                        event.getLocation()
-                );
-                log.info("Confirmation email sent to {} for event '{}'",
-                        registration.getUserEmail(), event.getTitle());
+            // Send waitlist email
+            sendEmailSafely(() -> emailService.sendWaitlistConfirmation(
+                    registration.getUserEmail(),
+                    registration.getUserName() != null ? registration.getUserName() : "there",
+                    event.getTitle(),
+                    event.getStartDate(),
+                    event.getLocation()
+            ), registration.getUserEmail(), "waitlist confirmation");
+
+            return saved;
+
+        } else {
+            // ── REGISTER ──
+            if (registration.getStatus() == null) {
+                registration.setStatus(RegistrationStatus.REGISTERED);
             }
-        } catch (Exception e) {
-            log.error("Failed to send confirmation email to {}: {}",
-                    registration.getUserEmail(), e.getMessage());
-        }
 
-        return saved;
+            // Increment current attendees
+            event.setCurrentAttendees(
+                    (event.getCurrentAttendees() != null ? event.getCurrentAttendees() : 0) + 1
+            );
+            eventRepository.save(event);
+
+            EventRegistration saved = registrationRepository.save(registration);
+
+            // Send confirmation email
+            sendEmailSafely(() -> emailService.sendRegistrationConfirmation(
+                    registration.getUserEmail(),
+                    registration.getUserName() != null ? registration.getUserName() : "there",
+                    event.getTitle(),
+                    event.getStartDate(),
+                    event.getLocation()
+            ), registration.getUserEmail(), "registration confirmation");
+
+            return saved;
+        }
     }
 
     public EventRegistration update(Long id, EventRegistration registration) {
@@ -76,14 +94,71 @@ public class EventRegistrationService {
         EventRegistration registration = registrationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Registration not found with id: " + id));
 
-        // Decrement current attendees on the event
         Event event = registration.getEvent();
-        if (event.getCurrentAttendees() != null && event.getCurrentAttendees() > 0) {
-            event.setCurrentAttendees(event.getCurrentAttendees() - 1);
-            eventRepository.save(event);
-        }
+        boolean wasRegistered = registration.getStatus() == RegistrationStatus.REGISTERED
+                || registration.getStatus() == RegistrationStatus.CONFIRMED;
 
+        // Delete the registration
         registrationRepository.deleteById(id);
+
+        if (wasRegistered) {
+            // Decrement current attendees
+            if (event.getCurrentAttendees() != null && event.getCurrentAttendees() > 0) {
+                event.setCurrentAttendees(event.getCurrentAttendees() - 1);
+                eventRepository.save(event);
+            }
+
+            // Auto-promote the first waitlisted user (FIFO)
+            promoteNextWaitlisted(event);
+        }
+        // If WAITLISTED user cancels: just delete, no attendee change, no promotion
+    }
+
+    /**
+     * Promotes the first waitlisted user for the given event to REGISTERED.
+     */
+    private void promoteNextWaitlisted(Event event) {
+        Optional<EventRegistration> nextInLine = registrationRepository
+                .findFirstByEventIdAndStatusOrderByRegistrationDateAsc(
+                        event.getId(), RegistrationStatus.WAITLISTED);
+
+        if (nextInLine.isPresent()) {
+            EventRegistration promoted = nextInLine.get();
+            promoted.setStatus(RegistrationStatus.REGISTERED);
+            registrationRepository.save(promoted);
+
+            // Increment attendee count for the newly promoted user
+            event.setCurrentAttendees(
+                    (event.getCurrentAttendees() != null ? event.getCurrentAttendees() : 0) + 1
+            );
+            eventRepository.save(event);
+
+            log.info("Auto-promoted user {} from waitlist for event '{}'",
+                    promoted.getUserEmail(), event.getTitle());
+
+            // Send promotion email
+            sendEmailSafely(() -> emailService.sendWaitlistPromotion(
+                    promoted.getUserEmail(),
+                    promoted.getUserName() != null ? promoted.getUserName() : "there",
+                    event.getTitle(),
+                    event.getStartDate(),
+                    event.getLocation()
+            ), promoted.getUserEmail(), "waitlist promotion");
+        }
+    }
+
+    /**
+     * Sends an email safely — never lets email failure break the main operation.
+     */
+    private void sendEmailSafely(Runnable emailAction, String toEmail, String emailType) {
+        try {
+            if (toEmail != null && !toEmail.isBlank()) {
+                emailAction.run();
+                log.info("{} email sent to {}", emailType, toEmail);
+            }
+        } catch (Exception e) {
+            log.error("Failed to send {} email to {}: {}", emailType, toEmail, e.getMessage());
+        }
     }
 
     public EventRegistration getById(Long id) {
