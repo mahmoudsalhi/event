@@ -21,22 +21,13 @@ public class EventRegistration {
     private Long id;
 
     // ── Link to Event ─────────────────────────────────────
-<<<<<<< HEAD:backend/microservices/event/src/main/java/tn/esprit/event/entity/EventRegistration.java
-    @ManyToOne(fetch = FetchType.EAGER)
-=======
     @ManyToOne(fetch = FetchType.LAZY)
->>>>>>> 78d0ae216a736e7724d059bd6bfe986d9ca5fefe:Backend/Microservices/event/src/main/java/tn/esprit/event/entity/EventRegistration.java
     @JoinColumn(name = "event_id", nullable = false)
     @JsonIgnore
     @ToString.Exclude
     private Event event;
 
-<<<<<<< HEAD:backend/microservices/event/src/main/java/tn/esprit/event/entity/EventRegistration.java
-    // Read-only mapping of the FK column so JSON includes eventId
-    // without triggering lazy-load of the full Event
-=======
     // Expose the FK as a readable field in JSON (read-only, managed by JPA)
->>>>>>> 78d0ae216a736e7724d059bd6bfe986d9ca5fefe:Backend/Microservices/event/src/main/java/tn/esprit/event/entity/EventRegistration.java
     @Column(name = "event_id", insertable = false, updatable = false)
     private Long eventId;
 
