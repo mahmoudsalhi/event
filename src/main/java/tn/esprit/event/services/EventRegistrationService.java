@@ -13,6 +13,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.transaction.annotation.Transactional;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -22,6 +24,7 @@ public class EventRegistrationService {
     private final EventRepository eventRepository;
     private final EmailService emailService;
 
+    @Transactional
     public EventRegistration create(Long eventId, EventRegistration registration) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new RuntimeException("Event not found with id: " + eventId));
@@ -90,6 +93,7 @@ public class EventRegistrationService {
         return registrationRepository.save(existing);
     }
 
+    @Transactional
     public void delete(Long id) {
         EventRegistration registration = registrationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Registration not found with id: " + id));
