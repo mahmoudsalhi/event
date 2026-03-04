@@ -181,4 +181,24 @@ public class EventRegistrationService {
     public List<EventRegistration> getByUserId(Long userId) {
         return registrationRepository.findByUserId(userId);
     }
+
+    /**
+     * QR Check-in: looks up registration by checkInCode and marks as ATTENDED.
+     */
+    @Transactional
+    public EventRegistration checkIn(String checkInCode) {
+        EventRegistration registration = registrationRepository.findByCheckInCode(checkInCode)
+                .orElseThrow(() -> new RuntimeException("Invalid check-in code: " + checkInCode));
+
+        if (registration.getStatus() == RegistrationStatus.ATTENDED) {
+            throw new RuntimeException("Already checked in");
+        }
+
+        if (registration.getStatus() == RegistrationStatus.WAITLISTED) {
+            throw new RuntimeException("Cannot check in a waitlisted registration");
+        }
+
+        registration.setStatus(RegistrationStatus.ATTENDED);
+        return registrationRepository.save(registration);
+    }
 }

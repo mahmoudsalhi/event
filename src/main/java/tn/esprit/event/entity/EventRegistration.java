@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -48,4 +49,15 @@ public class EventRegistration {
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
     private RegistrationStatus status;
+
+    // ── QR Check-in ──────────────────────────────────────
+    @Column(name = "check_in_code", unique = true)
+    private String checkInCode;
+
+    @PrePersist
+    private void generateCheckInCode() {
+        if (this.checkInCode == null) {
+            this.checkInCode = UUID.randomUUID().toString();
+        }
+    }
 }

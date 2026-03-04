@@ -94,4 +94,16 @@ public class EventController {
         registrationService.delete(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/registrations/check-in/{code}")
+    public ResponseEntity<?> checkIn(@PathVariable String code) {
+        try {
+            EventRegistration updated = registrationService.checkIn(code);
+            return ResponseEntity.ok(updated);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(
+                    java.util.Map.of("error", e.getMessage())
+            );
+        }
+    }
 }
