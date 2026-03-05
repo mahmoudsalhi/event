@@ -27,11 +27,12 @@ public interface EventRegistrationRepository extends JpaRepository<EventRegistra
 
     /** Find registrations that need SMS reminders (event starts within 24h, not yet reminded) */
     @Query("SELECT r FROM EventRegistration r JOIN FETCH r.event e " +
-           "WHERE r.status = 'REGISTERED' " +
+           "WHERE r.status = :status " +
            "AND r.phoneNumber IS NOT NULL " +
            "AND (r.smsReminderSent IS NULL OR r.smsReminderSent = false) " +
            "AND e.startDate BETWEEN :now AND :cutoff")
     List<EventRegistration> findPendingReminders(
+            @Param("status") RegistrationStatus status,
             @Param("now") LocalDateTime now,
             @Param("cutoff") LocalDateTime cutoff);
 }

@@ -8,6 +8,7 @@ import tn.esprit.event.entity.Event;
 import tn.esprit.event.entity.EventRegistration;
 import tn.esprit.event.services.EventService;
 import tn.esprit.event.services.EventRegistrationService;
+import tn.esprit.event.services.EventReminderScheduler;
 
 import java.util.List;
 
@@ -18,6 +19,7 @@ public class EventController {
 
     private final EventService eventService;
     private final EventRegistrationService registrationService;
+    private final EventReminderScheduler reminderScheduler;
 
     // ══════════════════════════════════════════════════════
     // EVENT CRUD
@@ -106,4 +108,12 @@ public class EventController {
             );
         }
     }
+
+    /** Test endpoint: manually trigger SMS reminders now */
+    @PostMapping("/test-sms-reminders")
+    public ResponseEntity<?> testSmsReminders() {
+        reminderScheduler.sendUpcomingEventReminders();
+        return ResponseEntity.ok(java.util.Map.of("message", "Reminder check triggered"));
+    }
 }
+
