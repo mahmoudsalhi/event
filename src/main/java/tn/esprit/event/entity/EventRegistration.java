@@ -59,6 +59,7 @@ public class EventRegistration {
     private String phoneNumber;
 
     @Column(name = "sms_reminder_sent")
+    @Builder.Default
     private Boolean smsReminderSent = false;
 
     @PrePersist
