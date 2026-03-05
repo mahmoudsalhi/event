@@ -10,19 +10,26 @@ import org.springframework.stereotype.Service;
 public class SmsService {
 
     private final String fromNumber;
-    private boolean initialized = false;
+    private final boolean enabled;
 
     public SmsService(
-            @Value("${twilio.account-sid}") String accountSid,
-            @Value("${twilio.auth-token}") String authToken,
-            @Value("${twilio.phone-number}") String fromNumber) {
+            @Value("${twilio.account-sid:}") String accountSid,
+            @Value("${twilio.auth-token:}") String authToken,
+            @Value("${twilio.phone-number:}") String fromNumber) {
         this.fromNumber = fromNumber;
-        try {
-            Twilio.init(accountSid, authToken);
-            this.initialized = true;
-            System.out.println("[SMS] Twilio initialized successfully");
-        } catch (Exception e) {
-            System.err.println("[SMS] Failed to initialize Twilio: " + e.getMessage());
+        if (accountSid != null && !accountSid.isBlank()
+                && authToken != null && !authToken.isBlank()) {
+            try {
+                Twilio.init(accountSid, authToken);
+                this.enabled = true;
+                System.out.println("[SMS] Twilio initialized successfully");
+            } catch (Exception e) {
+                this.enabled = false;
+                System.err.println("[SMS] Failed to initialize Twilio: " + e.getMessage());
+            }
+        } else {
+            this.enabled = false;
+            System.out.println("[SMS] Twilio credentials not configured, SMS disabled");
         }
     }
 
@@ -30,8 +37,8 @@ public class SmsService {
      * Sends an SMS to the given phone number.
      */
     public void sendSms(String toPhone, String messageBody) {
-        if (!initialized) {
-            System.err.println("[SMS] Twilio not initialized, skipping SMS to " + toPhone);
+        if (!enabled) {
+            System.out.println("[SMS] Skipping (not configured): " + toPhone);
             return;
         }
         try {
