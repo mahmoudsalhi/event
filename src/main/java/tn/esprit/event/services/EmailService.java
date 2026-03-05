@@ -133,8 +133,6 @@ public class EmailService {
             "📌 Event: " + eventTitle + "\n" +
             "📅 Date: " + formatEventDate(eventDate) + "\n\n" +
             "We'd love to hear your feedback! Rate this event with 1-5 stars " +
-            "on the Events page under the \"Past\" tab.\n\n" +
-            "Go to your events: " + eventsLink + "\n\n" +
             "Your rating helps us improve future events!\n\n" +
             "Thanks,\n" +
             "The MiNoLingo Team"

@@ -116,6 +116,13 @@ public class EventController {
         return ResponseEntity.ok(java.util.Map.of("message", "Reminder check triggered"));
     }
 
+    /** Test endpoint: manually trigger rating emails now */
+    @PostMapping("/test-rating-emails")
+    public ResponseEntity<?> testRatingEmails() {
+        reminderScheduler.sendPostEventRatingEmails();
+        return ResponseEntity.ok(java.util.Map.of("message", "Rating email check triggered"));
+    }
+
     /** Rate an event (1-5 stars) */
     @PostMapping("/registrations/rate/{id}")
     public ResponseEntity<?> rateEvent(@PathVariable Long id, @RequestBody java.util.Map<String, Integer> body) {
