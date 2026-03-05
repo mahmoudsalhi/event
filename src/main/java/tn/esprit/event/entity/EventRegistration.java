@@ -54,6 +54,13 @@ public class EventRegistration {
     @Column(name = "check_in_code", unique = true)
     private String checkInCode;
 
+    // ── SMS Reminder ─────────────────────────────────────
+    @Column(name = "phone_number")
+    private String phoneNumber;
+
+    @Column(name = "sms_reminder_sent")
+    private Boolean smsReminderSent = false;
+
     @PrePersist
     private void generateCheckInCode() {
         if (this.checkInCode == null) {
