@@ -62,6 +62,14 @@ public class EventRegistration {
     @Builder.Default
     private Boolean smsReminderSent = false;
 
+    // ── Event Rating ─────────────────────────────────────
+    @Column(name = "rating")
+    private Integer rating; // 1-5 stars, null = not rated
+
+    @Column(name = "rating_email_sent")
+    @Builder.Default
+    private Boolean ratingEmailSent = false;
+
     @PrePersist
     private void generateCheckInCode() {
         if (this.checkInCode == null) {

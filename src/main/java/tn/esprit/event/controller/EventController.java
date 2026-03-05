@@ -115,5 +115,18 @@ public class EventController {
         reminderScheduler.sendUpcomingEventReminders();
         return ResponseEntity.ok(java.util.Map.of("message", "Reminder check triggered"));
     }
-}
 
+    /** Rate an event (1-5 stars) */
+    @PostMapping("/registrations/rate/{id}")
+    public ResponseEntity<?> rateEvent(@PathVariable Long id, @RequestBody java.util.Map<String, Integer> body) {
+        try {
+            int rating = body.getOrDefault("rating", 0);
+            EventRegistration updated = registrationService.rateEvent(id, rating);
+            return ResponseEntity.ok(updated);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(
+                    java.util.Map.of("error", e.getMessage())
+            );
+        }
+    }
+}

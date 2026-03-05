@@ -114,4 +114,32 @@ public class EmailService {
 
         mailSender.send(message);
     }
+
+    /**
+     * Sends a post-event email asking the user to rate the event.
+     */
+    public void sendRatingRequest(String toEmail, String userName,
+                                   String eventTitle, LocalDateTime eventDate) {
+
+        String eventsLink = frontendUrl + "/events";
+
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromEmail);
+        message.setTo(toEmail);
+        message.setSubject("How was " + eventTitle + "? Rate it! ⭐ - MiNoLingo");
+        message.setText(
+            "Hi " + userName + ",\n\n" +
+            "Thanks for attending:\n\n" +
+            "📌 Event: " + eventTitle + "\n" +
+            "📅 Date: " + formatEventDate(eventDate) + "\n\n" +
+            "We'd love to hear your feedback! Rate this event with 1-5 stars " +
+            "on the Events page under the \"Past\" tab.\n\n" +
+            "Go to your events: " + eventsLink + "\n\n" +
+            "Your rating helps us improve future events!\n\n" +
+            "Thanks,\n" +
+            "The MiNoLingo Team"
+        );
+
+        mailSender.send(message);
+    }
 }

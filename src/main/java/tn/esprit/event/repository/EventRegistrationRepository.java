@@ -35,4 +35,14 @@ public interface EventRegistrationRepository extends JpaRepository<EventRegistra
             @Param("status") RegistrationStatus status,
             @Param("now") LocalDateTime now,
             @Param("cutoff") LocalDateTime cutoff);
+
+    /** Find registrations for events that ended, where rating email hasn't been sent yet */
+    @Query("SELECT r FROM EventRegistration r JOIN FETCH r.event e " +
+           "WHERE r.status = :status " +
+           "AND r.userEmail IS NOT NULL " +
+           "AND (r.ratingEmailSent IS NULL OR r.ratingEmailSent = false) " +
+           "AND e.endDate IS NOT NULL AND e.endDate < :now")
+    List<EventRegistration> findPendingRatingEmails(
+            @Param("status") RegistrationStatus status,
+            @Param("now") LocalDateTime now);
 }

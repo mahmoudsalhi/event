@@ -201,4 +201,20 @@ public class EventRegistrationService {
         registration.setStatus(RegistrationStatus.ATTENDED);
         return registrationRepository.save(registration);
     }
+
+    /**
+     * Rate an event: sets the rating (1-5) on the registration.
+     */
+    @Transactional
+    public EventRegistration rateEvent(Long registrationId, int rating) {
+        if (rating < 1 || rating > 5) {
+            throw new RuntimeException("Rating must be between 1 and 5");
+        }
+
+        EventRegistration registration = registrationRepository.findById(registrationId)
+                .orElseThrow(() -> new RuntimeException("Registration not found with id: " + registrationId));
+
+        registration.setRating(rating);
+        return registrationRepository.save(registration);
+    }
 }
