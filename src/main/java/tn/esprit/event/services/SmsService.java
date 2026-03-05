@@ -1,14 +1,21 @@
 package tn.esprit.event.services;
 
-import com.twilio.Twilio;
-import com.twilio.rest.api.v2010.account.Message;
-import com.twilio.type.PhoneNumber;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+
+import java.net.URI;
+import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 @Service
 public class SmsService {
 
+    private final String accountSid;
+    private final String authToken;
     private final String fromNumber;
     private final boolean enabled;
 
@@ -16,25 +23,22 @@ public class SmsService {
             @Value("${twilio.account-sid:}") String accountSid,
             @Value("${twilio.auth-token:}") String authToken,
             @Value("${twilio.phone-number:}") String fromNumber) {
+        this.accountSid = accountSid;
+        this.authToken = authToken;
         this.fromNumber = fromNumber;
-        if (accountSid != null && !accountSid.isBlank()
-                && authToken != null && !authToken.isBlank()) {
-            try {
-                Twilio.init(accountSid, authToken);
-                this.enabled = true;
-                System.out.println("[SMS] Twilio initialized successfully");
-            } catch (Exception e) {
-                this.enabled = false;
-                System.err.println("[SMS] Failed to initialize Twilio: " + e.getMessage());
-            }
+        this.enabled = accountSid != null && !accountSid.isBlank()
+                    && authToken != null && !authToken.isBlank()
+                    && fromNumber != null && !fromNumber.isBlank();
+
+        if (enabled) {
+            System.out.println("[SMS] Twilio configured successfully (using REST API)");
         } else {
-            this.enabled = false;
             System.out.println("[SMS] Twilio credentials not configured, SMS disabled");
         }
     }
 
     /**
-     * Sends an SMS to the given phone number.
+     * Sends an SMS via Twilio REST API (no SDK needed).
      */
     public void sendSms(String toPhone, String messageBody) {
         if (!enabled) {
@@ -42,14 +46,32 @@ public class SmsService {
             return;
         }
         try {
-            Message message = Message.creator(
-                    new PhoneNumber(toPhone),
-                    new PhoneNumber(fromNumber),
-                    messageBody
-            ).create();
-            System.out.println("[SMS] Sent: " + message.getSid() + " to " + toPhone);
+            String url = "https://api.twilio.com/2010-04-01/Accounts/" + accountSid + "/Messages.json";
+
+            String body = "To=" + URLEncoder.encode(toPhone, StandardCharsets.UTF_8)
+                    + "&From=" + URLEncoder.encode(fromNumber, StandardCharsets.UTF_8)
+                    + "&Body=" + URLEncoder.encode(messageBody, StandardCharsets.UTF_8);
+
+            String auth = Base64.getEncoder().encodeToString(
+                    (accountSid + ":" + authToken).getBytes(StandardCharsets.UTF_8));
+
+            HttpClient client = HttpClient.newHttpClient();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .header("Authorization", "Basic " + auth)
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .POST(HttpRequest.BodyPublishers.ofString(body))
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() == 201 || response.statusCode() == 200) {
+                System.out.println("[SMS] Sent successfully to " + toPhone);
+            } else {
+                System.err.println("[SMS] Failed (" + response.statusCode() + "): " + response.body());
+            }
         } catch (Exception e) {
-            System.err.println("[SMS] Failed to send to " + toPhone + ": " + e.getMessage());
+            System.err.println("[SMS] Error sending to " + toPhone + ": " + e.getMessage());
         }
     }
 }
