@@ -32,7 +32,7 @@ public class EventRegistrationService {
         registration.setEvent(event);
         registration.setRegistrationDate(LocalDateTime.now());
 
-        // Check if event is full → waitlist instead of pending approval
+        // Check if event is full → waitlist instead of register
         boolean isFull = event.getMaxAttendees() != null
                 && (event.getCurrentAttendees() != null ? event.getCurrentAttendees() : 0)
                         >= event.getMaxAttendees();
@@ -56,104 +56,30 @@ public class EventRegistrationService {
             return saved;
 
         } else {
-            // ── PENDING APPROVAL ──
-            registration.setStatus(RegistrationStatus.PENDING_APPROVAL);
-            // Do NOT increment attendee count — admin must approve first
+            // ── REGISTER ──
+            if (registration.getStatus() == null) {
+                registration.setStatus(RegistrationStatus.REGISTERED);
+            }
+
+            // Increment current attendees
+            event.setCurrentAttendees(
+                    (event.getCurrentAttendees() != null ? event.getCurrentAttendees() : 0) + 1
+            );
+            eventRepository.save(event);
 
             EventRegistration saved = registrationRepository.save(registration);
 
-            // Send pending approval email
-            sendEmailSafely(() -> emailService.sendPendingApprovalNotification(
+            // Send confirmation email
+            sendEmailSafely(() -> emailService.sendRegistrationConfirmation(
                     registration.getUserEmail(),
                     registration.getUserName() != null ? registration.getUserName() : "there",
                     event.getTitle(),
                     event.getStartDate(),
                     event.getLocation()
-            ), registration.getUserEmail(), "pending approval notification");
+            ), registration.getUserEmail(), "registration confirmation");
 
             return saved;
         }
-    }
-
-    /**
-     * Admin approves a pending registration.
-     * Changes status to REGISTERED and increments attendee count.
-     */
-    @Transactional
-    public EventRegistration approveRegistration(Long id) {
-        EventRegistration registration = registrationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Registration not found with id: " + id));
-
-        if (registration.getStatus() != RegistrationStatus.PENDING_APPROVAL) {
-            throw new RuntimeException("Registration is not pending approval. Current status: " + registration.getStatus());
-        }
-
-        Event event = registration.getEvent();
-
-        // Set status to REGISTERED
-        registration.setStatus(RegistrationStatus.REGISTERED);
-        EventRegistration saved = registrationRepository.save(registration);
-
-        // Increment current attendees
-        event.setCurrentAttendees(
-                (event.getCurrentAttendees() != null ? event.getCurrentAttendees() : 0) + 1
-        );
-        eventRepository.save(event);
-
-        // Send approval email
-        sendEmailSafely(() -> emailService.sendApprovalNotification(
-                registration.getUserEmail(),
-                registration.getUserName() != null ? registration.getUserName() : "there",
-                event.getTitle(),
-                event.getStartDate(),
-                event.getLocation()
-        ), registration.getUserEmail(), "approval notification");
-
-        log.info("Admin approved registration {} for user {} on event '{}'",
-                id, registration.getUserEmail(), event.getTitle());
-
-        return saved;
-    }
-
-    /**
-     * Admin declines a pending registration.
-     * Changes status to DECLINED. Does NOT affect attendee count.
-     */
-    @Transactional
-    public EventRegistration declineRegistration(Long id) {
-        EventRegistration registration = registrationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Registration not found with id: " + id));
-
-        if (registration.getStatus() != RegistrationStatus.PENDING_APPROVAL) {
-            throw new RuntimeException("Registration is not pending approval. Current status: " + registration.getStatus());
-        }
-
-        Event event = registration.getEvent();
-
-        // Set status to DECLINED
-        registration.setStatus(RegistrationStatus.DECLINED);
-        EventRegistration saved = registrationRepository.save(registration);
-
-        // Send decline email
-        sendEmailSafely(() -> emailService.sendRegistrationDeclined(
-                registration.getUserEmail(),
-                registration.getUserName() != null ? registration.getUserName() : "there",
-                event.getTitle(),
-                event.getStartDate(),
-                event.getLocation()
-        ), registration.getUserEmail(), "registration declined notification");
-
-        log.info("Admin declined registration {} for user {} on event '{}'",
-                id, registration.getUserEmail(), event.getTitle());
-
-        return saved;
-    }
-
-    /**
-     * Get all pending registrations for a specific event.
-     */
-    public List<EventRegistration> getPendingByEventId(Long eventId) {
-        return registrationRepository.findByEventIdAndStatus(eventId, RegistrationStatus.PENDING_APPROVAL);
     }
 
     public EventRegistration update(Long id, EventRegistration registration) {
@@ -189,11 +115,11 @@ public class EventRegistrationService {
             // Auto-promote the first waitlisted user (FIFO)
             promoteNextWaitlisted(event);
         }
-        // If WAITLISTED or PENDING_APPROVAL user cancels: just delete, no attendee change, no promotion
+        // If WAITLISTED user cancels: just delete, no attendee change, no promotion
     }
 
     /**
-     * Promotes the first waitlisted user for the given event to PENDING_APPROVAL.
+     * Promotes the first waitlisted user for the given event to REGISTERED.
      */
     private void promoteNextWaitlisted(Event event) {
         Optional<EventRegistration> nextInLine = registrationRepository
@@ -202,20 +128,26 @@ public class EventRegistrationService {
 
         if (nextInLine.isPresent()) {
             EventRegistration promoted = nextInLine.get();
-            promoted.setStatus(RegistrationStatus.PENDING_APPROVAL);
+            promoted.setStatus(RegistrationStatus.REGISTERED);
             registrationRepository.save(promoted);
 
-            log.info("Auto-promoted user {} from waitlist to pending approval for event '{}'",
+            // Increment attendee count for the newly promoted user
+            event.setCurrentAttendees(
+                    (event.getCurrentAttendees() != null ? event.getCurrentAttendees() : 0) + 1
+            );
+            eventRepository.save(event);
+
+            log.info("Auto-promoted user {} from waitlist for event '{}'",
                     promoted.getUserEmail(), event.getTitle());
 
-            // Send pending approval email to the promoted user
-            sendEmailSafely(() -> emailService.sendPendingApprovalNotification(
+            // Send promotion email
+            sendEmailSafely(() -> emailService.sendWaitlistPromotion(
                     promoted.getUserEmail(),
                     promoted.getUserName() != null ? promoted.getUserName() : "there",
                     event.getTitle(),
                     event.getStartDate(),
                     event.getLocation()
-            ), promoted.getUserEmail(), "waitlist to pending approval notification");
+            ), promoted.getUserEmail(), "waitlist promotion");
         }
     }
 
@@ -264,14 +196,6 @@ public class EventRegistrationService {
 
         if (registration.getStatus() == RegistrationStatus.WAITLISTED) {
             throw new RuntimeException("Cannot check in a waitlisted registration");
-        }
-
-        if (registration.getStatus() == RegistrationStatus.PENDING_APPROVAL) {
-            throw new RuntimeException("Cannot check in a registration that is pending approval");
-        }
-
-        if (registration.getStatus() == RegistrationStatus.DECLINED) {
-            throw new RuntimeException("Cannot check in a declined registration");
         }
 
         registration.setStatus(RegistrationStatus.ATTENDED);

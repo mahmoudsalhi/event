@@ -136,40 +136,4 @@ public class EventController {
             );
         }
     }
-
-    // ══════════════════════════════════════════════════════
-    // REGISTRATION APPROVAL ENDPOINTS
-    // ══════════════════════════════════════════════════════
-
-    /** Admin approves a pending registration */
-    @PutMapping("/registrations/approve/{id}")
-    public ResponseEntity<?> approveRegistration(@PathVariable Long id) {
-        try {
-            EventRegistration approved = registrationService.approveRegistration(id);
-            return ResponseEntity.ok(approved);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(
-                    java.util.Map.of("error", e.getMessage())
-            );
-        }
-    }
-
-    /** Admin declines a pending registration */
-    @PutMapping("/registrations/decline/{id}")
-    public ResponseEntity<?> declineRegistration(@PathVariable Long id) {
-        try {
-            EventRegistration declined = registrationService.declineRegistration(id);
-            return ResponseEntity.ok(declined);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(
-                    java.util.Map.of("error", e.getMessage())
-            );
-        }
-    }
-
-    /** Get all pending registrations for a specific event */
-    @GetMapping("/registrations/pending/{eventId}")
-    public ResponseEntity<java.util.List<EventRegistration>> getPendingRegistrations(@PathVariable Long eventId) {
-        return ResponseEntity.ok(registrationService.getPendingByEventId(eventId));
-    }
 }
