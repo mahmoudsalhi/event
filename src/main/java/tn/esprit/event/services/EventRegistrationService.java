@@ -32,7 +32,7 @@ public class EventRegistrationService {
         registration.setEvent(event);
         registration.setRegistrationDate(LocalDateTime.now());
 
-        // Check if event is full → waitlist instead of register
+        // Check if event is full → waitlist instead of pending
         boolean isFull = event.getMaxAttendees() != null
                 && (event.getCurrentAttendees() != null ? event.getCurrentAttendees() : 0)
                         >= event.getMaxAttendees();
@@ -56,27 +56,20 @@ public class EventRegistrationService {
             return saved;
 
         } else {
-            // ── REGISTER ──
-            if (registration.getStatus() == null) {
-                registration.setStatus(RegistrationStatus.REGISTERED);
-            }
-
-            // Increment current attendees
-            event.setCurrentAttendees(
-                    (event.getCurrentAttendees() != null ? event.getCurrentAttendees() : 0) + 1
-            );
-            eventRepository.save(event);
+            // ── PENDING (awaiting admin approval) ──
+            registration.setStatus(RegistrationStatus.PENDING);
+            // Do NOT increment attendee count — only incremented on admin approval
 
             EventRegistration saved = registrationRepository.save(registration);
 
-            // Send confirmation email
-            sendEmailSafely(() -> emailService.sendRegistrationConfirmation(
+            // Send pending email
+            sendEmailSafely(() -> emailService.sendRegistrationPending(
                     registration.getUserEmail(),
                     registration.getUserName() != null ? registration.getUserName() : "there",
                     event.getTitle(),
                     event.getStartDate(),
                     event.getLocation()
-            ), registration.getUserEmail(), "registration confirmation");
+            ), registration.getUserEmail(), "registration pending");
 
             return saved;
         }
@@ -216,5 +209,92 @@ public class EventRegistrationService {
 
         registration.setRating(rating);
         return registrationRepository.save(registration);
+    }
+
+    // ══════════════════════════════════════════════════════
+    // ADMIN APPROVAL / DECLINE
+    // ══════════════════════════════════════════════════════
+
+    /**
+     * Admin approves a pending registration → REGISTERED.
+     */
+    @Transactional
+    public EventRegistration approveRegistration(Long id) {
+        EventRegistration registration = registrationRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Registration not found with id: " + id));
+
+        if (registration.getStatus() != RegistrationStatus.PENDING) {
+            throw new RuntimeException("Only PENDING registrations can be approved. Current status: " + registration.getStatus());
+        }
+
+        registration.setStatus(RegistrationStatus.REGISTERED);
+        EventRegistration saved = registrationRepository.save(registration);
+
+        // Increment current attendees on the event
+        Event event = registration.getEvent();
+        event.setCurrentAttendees(
+                (event.getCurrentAttendees() != null ? event.getCurrentAttendees() : 0) + 1
+        );
+        eventRepository.save(event);
+
+        // Send approval email
+        sendEmailSafely(() -> emailService.sendRegistrationApproved(
+                registration.getUserEmail(),
+                registration.getUserName() != null ? registration.getUserName() : "there",
+                event.getTitle(),
+                event.getStartDate(),
+                event.getLocation()
+        ), registration.getUserEmail(), "registration approved");
+
+        log.info("Admin approved registration {} for user '{}' on event '{}'",
+                id, registration.getUserEmail(), event.getTitle());
+
+        return saved;
+    }
+
+    /**
+     * Admin declines a pending registration → DECLINED.
+     */
+    @Transactional
+    public EventRegistration declineRegistration(Long id) {
+        EventRegistration registration = registrationRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Registration not found with id: " + id));
+
+        if (registration.getStatus() != RegistrationStatus.PENDING) {
+            throw new RuntimeException("Only PENDING registrations can be declined. Current status: " + registration.getStatus());
+        }
+
+        registration.setStatus(RegistrationStatus.DECLINED);
+        EventRegistration saved = registrationRepository.save(registration);
+
+        Event event = registration.getEvent();
+
+        // Send decline email
+        sendEmailSafely(() -> emailService.sendRegistrationDeclined(
+                registration.getUserEmail(),
+                registration.getUserName() != null ? registration.getUserName() : "there",
+                event.getTitle(),
+                event.getStartDate(),
+                event.getLocation()
+        ), registration.getUserEmail(), "registration declined");
+
+        log.info("Admin declined registration {} for user '{}' on event '{}'",
+                id, registration.getUserEmail(), event.getTitle());
+
+        return saved;
+    }
+
+    /**
+     * Get all registrations with a specific status (e.g. PENDING for admin review).
+     */
+    public List<EventRegistration> getByStatus(RegistrationStatus status) {
+        return registrationRepository.findByStatus(status);
+    }
+
+    /**
+     * Get all registrations for a specific event with a specific status.
+     */
+    public List<EventRegistration> getByEventIdAndStatus(Long eventId, RegistrationStatus status) {
+        return registrationRepository.findByEventIdAndStatus(eventId, status);
     }
 }

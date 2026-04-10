@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import tn.esprit.event.entity.Event;
 import tn.esprit.event.entity.EventRegistration;
+import tn.esprit.event.entity.RegistrationStatus;
 import tn.esprit.event.services.EventService;
 import tn.esprit.event.services.EventRegistrationService;
 import tn.esprit.event.services.EventReminderScheduler;
@@ -136,4 +137,41 @@ public class EventController {
             );
         }
     }
+
+    // ══════════════════════════════════════════════════════
+    // ADMIN: APPROVE / DECLINE REGISTRATIONS
+    // ══════════════════════════════════════════════════════
+
+    /** Get all pending registrations (for admin review) */
+    @GetMapping("/registrations/pending")
+    public ResponseEntity<List<EventRegistration>> getPendingRegistrations() {
+        return ResponseEntity.ok(registrationService.getByStatus(RegistrationStatus.PENDING));
+    }
+
+    /** Approve a pending registration */
+    @PutMapping("/registrations/approve/{id}")
+    public ResponseEntity<?> approveRegistration(@PathVariable Long id) {
+        try {
+            EventRegistration updated = registrationService.approveRegistration(id);
+            return ResponseEntity.ok(updated);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(
+                    java.util.Map.of("error", e.getMessage())
+            );
+        }
+    }
+
+    /** Decline a pending registration */
+    @PutMapping("/registrations/decline/{id}")
+    public ResponseEntity<?> declineRegistration(@PathVariable Long id) {
+        try {
+            EventRegistration updated = registrationService.declineRegistration(id);
+            return ResponseEntity.ok(updated);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(
+                    java.util.Map.of("error", e.getMessage())
+            );
+        }
+    }
 }
+
