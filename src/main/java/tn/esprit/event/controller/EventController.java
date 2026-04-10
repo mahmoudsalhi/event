@@ -4,10 +4,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import tn.esprit.event.dto.RecommendedEventDTO;
 import tn.esprit.event.entity.Event;
 import tn.esprit.event.entity.EventRegistration;
 import tn.esprit.event.services.EventService;
 import tn.esprit.event.services.EventRegistrationService;
+import tn.esprit.event.services.EventRecommendationService;
 import tn.esprit.event.services.EventReminderScheduler;
 
 import java.util.List;
@@ -19,6 +21,7 @@ public class EventController {
 
     private final EventService eventService;
     private final EventRegistrationService registrationService;
+    private final EventRecommendationService recommendationService;
     private final EventReminderScheduler reminderScheduler;
 
     // ══════════════════════════════════════════════════════
@@ -135,5 +138,21 @@ public class EventController {
                     java.util.Map.of("error", e.getMessage())
             );
         }
+    }
+
+    // ══════════════════════════════════════════════════════
+    // AI RECOMMENDATIONS
+    // ══════════════════════════════════════════════════════
+
+    /**
+     * Returns AI-powered event recommendations for a user.
+     * Uses Gemini to rank and explain the best matching upcoming events.
+     */
+    @GetMapping("/recommendations/{userId}")
+    public ResponseEntity<List<RecommendedEventDTO>> getRecommendations(
+            @PathVariable Long userId,
+            @RequestParam(defaultValue = "4") int limit) {
+        List<RecommendedEventDTO> recommendations = recommendationService.getRecommendations(userId, limit);
+        return ResponseEntity.ok(recommendations);
     }
 }
