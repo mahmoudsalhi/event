@@ -1,7 +1,7 @@
 package tn.esprit.event.entity;
 
 public enum RegistrationStatus {
-    PENDING,
+    PENDING_APPROVAL,
     REGISTERED,
     WAITLISTED,
     CONFIRMED,

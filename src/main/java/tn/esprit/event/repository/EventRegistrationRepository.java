@@ -18,6 +18,9 @@ public interface EventRegistrationRepository extends JpaRepository<EventRegistra
 
     List<EventRegistration> findByUserId(Long userId);
 
+    /** Find registrations for a given event with a specific status */
+    List<EventRegistration> findByEventIdAndStatus(Long eventId, RegistrationStatus status);
+
     /** Find the first waitlisted user for a given event, ordered by registration date (FIFO) */
     Optional<EventRegistration> findFirstByEventIdAndStatusOrderByRegistrationDateAsc(
             Long eventId, RegistrationStatus status);
@@ -35,12 +38,6 @@ public interface EventRegistrationRepository extends JpaRepository<EventRegistra
             @Param("status") RegistrationStatus status,
             @Param("now") LocalDateTime now,
             @Param("cutoff") LocalDateTime cutoff);
-
-    /** Find all registrations with a given status */
-    List<EventRegistration> findByStatus(RegistrationStatus status);
-
-    /** Find all registrations for a specific event with a given status */
-    List<EventRegistration> findByEventIdAndStatus(Long eventId, RegistrationStatus status);
 
     /** Find registrations for events that ended, where rating email hasn't been sent yet */
     @Query("SELECT r FROM EventRegistration r JOIN FETCH r.event e " +
