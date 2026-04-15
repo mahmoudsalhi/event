@@ -100,6 +100,35 @@ public class EventController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping("/registrations/approve/{id}")
+    public ResponseEntity<?> approveRegistration(@PathVariable Long id) {
+        try {
+            EventRegistration updated = registrationService.approve(id);
+            return ResponseEntity.ok(updated);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(
+                    java.util.Map.of("error", e.getMessage())
+            );
+        }
+    }
+
+    @PostMapping("/registrations/reject/{id}")
+    public ResponseEntity<?> rejectRegistration(@PathVariable Long id) {
+        try {
+            EventRegistration updated = registrationService.reject(id);
+            return ResponseEntity.ok(updated);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(
+                    java.util.Map.of("error", e.getMessage())
+            );
+        }
+    }
+
+    @GetMapping("/registrations/pending")
+    public ResponseEntity<List<EventRegistration>> getPendingRegistrations() {
+        return ResponseEntity.ok(registrationService.getPending());
+    }
+
     @PostMapping("/registrations/check-in/{code}")
     public ResponseEntity<?> checkIn(@PathVariable String code) {
         try {

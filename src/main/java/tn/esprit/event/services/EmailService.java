@@ -116,6 +116,61 @@ public class EmailService {
     }
 
     /**
+     * Sends a "request received, pending approval" email.
+     */
+    public void sendPendingConfirmation(String toEmail, String userName,
+                                        String eventTitle, LocalDateTime eventDate,
+                                        String eventLocation, boolean isWaitlistRequest) {
+
+        String eventsLink = frontendUrl + "/events";
+        String context = isWaitlistRequest
+                ? "The event is currently at capacity, so your request is for a waitlist spot."
+                : "Your request is for a regular spot.";
+
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromEmail);
+        message.setTo(toEmail);
+        message.setSubject("Request received \uD83D\uDCEC " + eventTitle + " - MiNoLingo");
+        message.setText(
+            "Hi " + userName + ",\n\n" +
+            "We've received your registration request for:\n\n" +
+            "\uD83D\uDCCC Event: " + eventTitle + "\n" +
+            "\uD83D\uDCC5 Date: " + formatEventDate(eventDate) + "\n" +
+            "\uD83D\uDCCD Location: " + (eventLocation != null ? eventLocation : "To be announced") + "\n\n" +
+            context + "\n\n" +
+            "An admin will review your request shortly. You'll receive another email once it's approved or rejected.\n\n" +
+            "View your events: " + eventsLink + "\n\n" +
+            "Thanks for your patience!\n" +
+            "The MiNoLingo Team"
+        );
+
+        mailSender.send(message);
+    }
+
+    /**
+     * Sends a rejection email.
+     */
+    public void sendRejectionEmail(String toEmail, String userName, String eventTitle) {
+
+        String eventsLink = frontendUrl + "/events";
+
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromEmail);
+        message.setTo(toEmail);
+        message.setSubject("Registration update for " + eventTitle + " - MiNoLingo");
+        message.setText(
+            "Hi " + userName + ",\n\n" +
+            "Unfortunately, your registration request for \"" + eventTitle + "\" was not approved.\n\n" +
+            "This may be due to eligibility requirements or capacity constraints. " +
+            "Feel free to browse other upcoming events!\n\n" +
+            "View events: " + eventsLink + "\n\n" +
+            "The MiNoLingo Team"
+        );
+
+        mailSender.send(message);
+    }
+
+    /**
      * Sends a post-event email asking the user to rate the event.
      */
     public void sendRatingRequest(String toEmail, String userName,

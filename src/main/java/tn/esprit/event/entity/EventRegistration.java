@@ -54,6 +54,11 @@ public class EventRegistration {
     @Column(name = "check_in_code", unique = true)
     private String checkInCode;
 
+    // ── Admin approval context ────────────────────────────
+    @Column(name = "requested_waitlist")
+    @Builder.Default
+    private Boolean requestedWaitlist = false;
+
     // ── SMS Reminder ─────────────────────────────────────
     @Column(name = "phone_number")
     private String phoneNumber;

@@ -18,6 +18,8 @@ public interface EventRegistrationRepository extends JpaRepository<EventRegistra
 
     List<EventRegistration> findByUserId(Long userId);
 
+    List<EventRegistration> findByStatus(RegistrationStatus status);
+
     /** Find the first waitlisted user for a given event, ordered by registration date (FIFO) */
     Optional<EventRegistration> findFirstByEventIdAndStatusOrderByRegistrationDateAsc(
             Long eventId, RegistrationStatus status);
