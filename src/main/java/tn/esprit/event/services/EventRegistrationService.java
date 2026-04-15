@@ -29,6 +29,14 @@ public class EventRegistrationService {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new RuntimeException("Event not found with id: " + eventId));
 
+        if (Boolean.FALSE.equals(event.getIsPublic())) {
+            throw new RuntimeException("This event is not available for registration.");
+        }
+
+        if (Boolean.FALSE.equals(event.getIsRegistrationOpen())) {
+            throw new RuntimeException("Registration is closed for this event.");
+        }
+
         registration.setEvent(event);
         registration.setRegistrationDate(LocalDateTime.now());
 

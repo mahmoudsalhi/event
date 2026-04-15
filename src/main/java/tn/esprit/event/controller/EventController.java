@@ -60,6 +60,11 @@ public class EventController {
         return ResponseEntity.ok(eventService.draft(id));
     }
 
+    @PostMapping("/undraft-event/{id}")
+    public ResponseEntity<Event> undraftEvent(@PathVariable Long id) {
+        return ResponseEntity.ok(eventService.undraft(id));
+    }
+
     // ══════════════════════════════════════════════════════
     // REGISTRATION ENDPOINTS (nested under /api/events)
     // ══════════════════════════════════════════════════════

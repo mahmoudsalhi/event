@@ -68,6 +68,13 @@ public class EventService {
         return eventRepository.save(event);
     }
 
+    public Event undraft(Long id) {
+        Event event = eventRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Event not found with id: " + id));
+        event.setStatus(EventStatus.UPCOMING);
+        return eventRepository.save(event);
+    }
+
     public Event getById(Long id) {
         return eventRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Event not found with id: " + id));
