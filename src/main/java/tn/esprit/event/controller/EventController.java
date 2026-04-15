@@ -65,6 +65,11 @@ public class EventController {
         return ResponseEntity.ok(eventService.undraft(id));
     }
 
+    @PostMapping("/uncancel-event/{id}")
+    public ResponseEntity<Event> uncancelEvent(@PathVariable Long id) {
+        return ResponseEntity.ok(eventService.uncancel(id));
+    }
+
     @PostMapping("/duplicate-event/{id}")
     public ResponseEntity<Event> duplicateEvent(@PathVariable Long id) {
         return ResponseEntity.ok(eventService.duplicate(id));

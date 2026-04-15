@@ -81,6 +81,13 @@ public class EventService {
         return eventRepository.save(event);
     }
 
+    public Event uncancel(Long id) {
+        Event event = eventRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Event not found with id: " + id));
+        event.setStatus(EventStatus.UPCOMING);
+        return eventRepository.save(event);
+    }
+
     public Event duplicate(Long id) {
         Event original = eventRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Event not found with id: " + id));
