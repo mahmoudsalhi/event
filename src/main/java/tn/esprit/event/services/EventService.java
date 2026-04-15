@@ -3,6 +3,7 @@ package tn.esprit.event.services;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import tn.esprit.event.entity.Event;
+import tn.esprit.event.entity.EventStatus;
 import tn.esprit.event.repository.EventRepository;
 
 import java.util.List;
@@ -58,6 +59,13 @@ public class EventService {
             throw new RuntimeException("Event not found with id: " + id);
         }
         eventRepository.deleteById(id);
+    }
+
+    public Event draft(Long id) {
+        Event event = eventRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Event not found with id: " + id));
+        event.setStatus(EventStatus.DRAFT);
+        return eventRepository.save(event);
     }
 
     public Event getById(Long id) {

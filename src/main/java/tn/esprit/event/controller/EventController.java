@@ -55,6 +55,11 @@ public class EventController {
         return ResponseEntity.noContent().build();
     }
 
+    @PatchMapping("/draft-event/{id}")
+    public ResponseEntity<Event> draftEvent(@PathVariable Long id) {
+        return ResponseEntity.ok(eventService.draft(id));
+    }
+
     // ══════════════════════════════════════════════════════
     // REGISTRATION ENDPOINTS (nested under /api/events)
     // ══════════════════════════════════════════════════════
