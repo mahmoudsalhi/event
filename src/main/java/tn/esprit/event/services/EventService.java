@@ -42,7 +42,7 @@ public class EventService {
         existing.setLongitude(event.getLongitude());
 
         existing.setMaxAttendees(event.getMaxAttendees());
-        existing.setCurrentAttendees(event.getCurrentAttendees());
+        // currentAttendees is managed solely by the registration system — never overwrite via update
         existing.setIsRegistrationOpen(event.getIsRegistrationOpen());
         existing.setRegistrationDeadline(event.getRegistrationDeadline());
 
