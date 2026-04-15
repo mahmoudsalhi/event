@@ -197,6 +197,33 @@ public class EmailService {
     }
 
     /**
+     * Notifies a waitlisted user that a spot opened and is pending admin approval.
+     */
+    public void sendSpotAvailableNotification(String toEmail, String userName,
+                                               String eventTitle, LocalDateTime eventDate,
+                                               String eventLocation) {
+        String eventsLink = frontendUrl + "/events";
+
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromEmail);
+        message.setTo(toEmail);
+        message.setSubject("A spot opened up! ⏳ " + eventTitle + " - MiNoLingo");
+        message.setText(
+            "Hi " + userName + ",\n\n" +
+            "Good news! A spot just opened up for:\n\n" +
+            "📌 Event: " + eventTitle + "\n" +
+            "📅 Date: " + formatEventDate(eventDate) + "\n" +
+            "📍 Location: " + (eventLocation != null ? eventLocation : "To be announced") + "\n\n" +
+            "Your registration is now pending admin approval. " +
+            "You'll receive another email once it's confirmed.\n\n" +
+            "View your events: " + eventsLink + "\n\n" +
+            "Fingers crossed!\n" +
+            "The MiNoLingo Team"
+        );
+        mailSender.send(message);
+    }
+
+    /**
      * Sends an event cancellation email to a registrant.
      */
     public void sendEventCancellation(String toEmail, String userName,

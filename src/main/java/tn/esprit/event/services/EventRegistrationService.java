@@ -40,28 +40,41 @@ public class EventRegistrationService {
         registration.setEvent(event);
         registration.setRegistrationDate(LocalDateTime.now());
 
-        // All registrations start as PENDING — admin must approve
-        registration.setStatus(RegistrationStatus.PENDING);
-
-        // Track whether the event was full at request time so admin UI can show context
         boolean isFull = event.getMaxAttendees() != null
                 && (event.getCurrentAttendees() != null ? event.getCurrentAttendees() : 0)
                         >= event.getMaxAttendees();
         registration.setRequestedWaitlist(isFull);
 
-        EventRegistration saved = registrationRepository.save(registration);
+        if (isFull) {
+            // Event is full → go directly to WAITLISTED, no admin approval needed
+            registration.setStatus(RegistrationStatus.WAITLISTED);
+            EventRegistration saved = registrationRepository.save(registration);
 
-        // Send "request received" email
-        sendEmailSafely(() -> emailService.sendPendingConfirmation(
-                registration.getUserEmail(),
-                registration.getUserName() != null ? registration.getUserName() : "there",
-                event.getTitle(),
-                event.getStartDate(),
-                event.getLocation(),
-                isFull
-        ), registration.getUserEmail(), "pending confirmation");
+            sendEmailSafely(() -> emailService.sendWaitlistConfirmation(
+                    registration.getUserEmail(),
+                    registration.getUserName() != null ? registration.getUserName() : "there",
+                    event.getTitle(),
+                    event.getStartDate(),
+                    event.getLocation()
+            ), registration.getUserEmail(), "waitlist confirmation");
 
-        return saved;
+            return saved;
+        } else {
+            // Spot available → PENDING, admin must approve
+            registration.setStatus(RegistrationStatus.PENDING);
+            EventRegistration saved = registrationRepository.save(registration);
+
+            sendEmailSafely(() -> emailService.sendPendingConfirmation(
+                    registration.getUserEmail(),
+                    registration.getUserName() != null ? registration.getUserName() : "there",
+                    event.getTitle(),
+                    event.getStartDate(),
+                    event.getLocation(),
+                    false
+            ), registration.getUserEmail(), "pending confirmation");
+
+            return saved;
+        }
     }
 
     /**
@@ -188,26 +201,21 @@ public class EventRegistrationService {
 
         if (nextInLine.isPresent()) {
             EventRegistration promoted = nextInLine.get();
-            promoted.setStatus(RegistrationStatus.REGISTERED);
+            // Move to PENDING so admin must confirm before the spot is taken
+            promoted.setStatus(RegistrationStatus.PENDING);
             registrationRepository.save(promoted);
 
-            // Increment attendee count for the newly promoted user
-            event.setCurrentAttendees(
-                    (event.getCurrentAttendees() != null ? event.getCurrentAttendees() : 0) + 1
-            );
-            eventRepository.save(event);
-
-            log.info("Auto-promoted user {} from waitlist for event '{}'",
+            log.info("Spot opened for user {} on event '{}' — moved to PENDING for admin approval",
                     promoted.getUserEmail(), event.getTitle());
 
-            // Send promotion email
-            sendEmailSafely(() -> emailService.sendWaitlistPromotion(
+            // Notify user that a spot opened and is awaiting admin confirmation
+            sendEmailSafely(() -> emailService.sendSpotAvailableNotification(
                     promoted.getUserEmail(),
                     promoted.getUserName() != null ? promoted.getUserName() : "there",
                     event.getTitle(),
                     event.getStartDate(),
                     event.getLocation()
-            ), promoted.getUserEmail(), "waitlist promotion");
+            ), promoted.getUserEmail(), "spot available notification");
         }
     }
 
