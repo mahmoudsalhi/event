@@ -254,6 +254,23 @@ public class EventRegistrationService {
         return position.intValue() + 1; // 1-based
     }
 
+    public void sendAnnouncement(Long eventId, String subject, String body) {
+        List<EventRegistration> registrations = registrationRepository.findByEventId(eventId);
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new RuntimeException("Event not found: " + eventId));
+        registrations.stream()
+                .filter(r -> r.getStatus() == RegistrationStatus.REGISTERED
+                          || r.getStatus() == RegistrationStatus.WAITLISTED
+                          || r.getStatus() == RegistrationStatus.CONFIRMED)
+                .forEach(r -> sendEmailSafely(() -> emailService.sendAnnouncement(
+                        r.getUserEmail(),
+                        r.getUserName() != null ? r.getUserName() : "there",
+                        event.getTitle(),
+                        subject,
+                        body
+                ), r.getUserEmail(), "announcement"));
+    }
+
     public Double getAvgRating(Long eventId) {
         return registrationRepository.findAvgRatingByEventId(eventId);
     }

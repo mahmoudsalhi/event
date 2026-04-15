@@ -195,4 +195,21 @@ public class EmailService {
 
         mailSender.send(message);
     }
+
+    /**
+     * Sends an admin announcement to a registrant.
+     */
+    public void sendAnnouncement(String toEmail, String userName,
+                                  String eventTitle, String subject, String body) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromEmail);
+        message.setTo(toEmail);
+        message.setSubject("[" + eventTitle + "] " + subject + " - MiNoLingo");
+        message.setText(
+            "Hi " + userName + ",\n\n" +
+            body + "\n\n" +
+            "— The MiNoLingo Team"
+        );
+        mailSender.send(message);
+    }
 }

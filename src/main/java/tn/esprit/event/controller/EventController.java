@@ -65,6 +65,32 @@ public class EventController {
         return ResponseEntity.ok(eventService.undraft(id));
     }
 
+    @PostMapping("/duplicate-event/{id}")
+    public ResponseEntity<Event> duplicateEvent(@PathVariable Long id) {
+        return ResponseEntity.ok(eventService.duplicate(id));
+    }
+
+    @PostMapping("/bulk-draft")
+    public ResponseEntity<Void> bulkDraft(@RequestBody java.util.List<Long> ids) {
+        eventService.bulkDraft(ids);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/bulk-cancel")
+    public ResponseEntity<Void> bulkCancel(@RequestBody java.util.List<Long> ids) {
+        eventService.bulkCancel(ids);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/registrations/announce/{eventId}")
+    public ResponseEntity<?> sendAnnouncement(@PathVariable Long eventId,
+            @RequestBody java.util.Map<String, String> body) {
+        String subject = body.getOrDefault("subject", "Announcement");
+        String message = body.getOrDefault("message", "");
+        registrationService.sendAnnouncement(eventId, subject, message);
+        return ResponseEntity.ok(java.util.Map.of("message", "Announcement sent"));
+    }
+
     // ══════════════════════════════════════════════════════
     // REGISTRATION ENDPOINTS (nested under /api/events)
     // ══════════════════════════════════════════════════════

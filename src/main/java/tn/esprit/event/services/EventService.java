@@ -75,6 +75,53 @@ public class EventService {
         return eventRepository.save(event);
     }
 
+    public Event duplicate(Long id) {
+        Event original = eventRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Event not found with id: " + id));
+        Event copy = Event.builder()
+                .title("Copy of " + original.getTitle())
+                .description(original.getDescription())
+                .image(original.getImage())
+                .category(original.getCategory())
+                .tags(original.getTags())
+                .startDate(original.getStartDate())
+                .endDate(original.getEndDate())
+                .location(original.getLocation())
+                .latitude(original.getLatitude())
+                .longitude(original.getLongitude())
+                .maxAttendees(original.getMaxAttendees())
+                .currentAttendees(0)
+                .isRegistrationOpen(original.getIsRegistrationOpen())
+                .status(EventStatus.DRAFT)
+                .isFeatured(false)
+                .isPublic(original.getIsPublic())
+                .hostName(original.getHostName())
+                .hostId(original.getHostId())
+                .contactEmail(original.getContactEmail())
+                .targetLevel(original.getTargetLevel())
+                .skillFocus(original.getSkillFocus())
+                .build();
+        return eventRepository.save(copy);
+    }
+
+    public void bulkDraft(java.util.List<Long> ids) {
+        ids.forEach(id -> {
+            eventRepository.findById(id).ifPresent(e -> {
+                e.setStatus(EventStatus.DRAFT);
+                eventRepository.save(e);
+            });
+        });
+    }
+
+    public void bulkCancel(java.util.List<Long> ids) {
+        ids.forEach(id -> {
+            eventRepository.findById(id).ifPresent(e -> {
+                e.setStatus(EventStatus.CANCELLED);
+                eventRepository.save(e);
+            });
+        });
+    }
+
     public Event getById(Long id) {
         return eventRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Event not found with id: " + id));
