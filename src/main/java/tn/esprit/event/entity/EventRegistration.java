@@ -55,8 +55,7 @@ public class EventRegistration {
     private String checkInCode;
 
     // ── Admin approval context ────────────────────────────
-    @Column(name = "requested_waitlist")
-    @Builder.Default
+    @Column(name = "requested_waitlist", nullable = false, columnDefinition = "boolean default false")
     private Boolean requestedWaitlist = false;
 
     // ── SMS Reminder ─────────────────────────────────────
