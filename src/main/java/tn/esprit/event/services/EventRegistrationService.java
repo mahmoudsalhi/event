@@ -246,6 +246,14 @@ public class EventRegistrationService {
         return registrationRepository.findByStatus(RegistrationStatus.PENDING);
     }
 
+    public Double getAvgRating(Long eventId) {
+        return registrationRepository.findAvgRatingByEventId(eventId);
+    }
+
+    public Long getRatingCount(Long eventId) {
+        return registrationRepository.countRatingsByEventId(eventId);
+    }
+
     /**
      * QR Check-in: looks up registration by checkInCode and marks as ATTENDED.
      */

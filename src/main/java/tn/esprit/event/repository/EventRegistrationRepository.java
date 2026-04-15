@@ -38,6 +38,14 @@ public interface EventRegistrationRepository extends JpaRepository<EventRegistra
             @Param("now") LocalDateTime now,
             @Param("cutoff") LocalDateTime cutoff);
 
+    /** Average rating for an event (only counts non-null ratings) */
+    @Query("SELECT AVG(r.rating) FROM EventRegistration r WHERE r.event.id = :eventId AND r.rating IS NOT NULL")
+    Double findAvgRatingByEventId(@Param("eventId") Long eventId);
+
+    /** Count of ratings submitted for an event */
+    @Query("SELECT COUNT(r) FROM EventRegistration r WHERE r.event.id = :eventId AND r.rating IS NOT NULL")
+    Long countRatingsByEventId(@Param("eventId") Long eventId);
+
     /** Find registrations for events that ended, where rating email hasn't been sent yet */
     @Query("SELECT r FROM EventRegistration r JOIN FETCH r.event e " +
            "WHERE r.status = :status " +

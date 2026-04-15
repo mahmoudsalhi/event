@@ -165,6 +165,17 @@ public class EventController {
         return ResponseEntity.ok(java.util.Map.of("message", "Rating email check triggered"));
     }
 
+    /** Average rating for an event */
+    @GetMapping("/registrations/avg-rating/{eventId}")
+    public ResponseEntity<java.util.Map<String, Object>> getAvgRating(@PathVariable Long eventId) {
+        Double avg = registrationService.getAvgRating(eventId);
+        Long count = registrationService.getRatingCount(eventId);
+        return ResponseEntity.ok(java.util.Map.of(
+            "avg", avg != null ? Math.round(avg * 10.0) / 10.0 : null,
+            "count", count
+        ));
+    }
+
     /** Rate an event (1-5 stars) */
     @PostMapping("/registrations/rate/{id}")
     public ResponseEntity<?> rateEvent(@PathVariable Long id, @RequestBody java.util.Map<String, Integer> body) {
