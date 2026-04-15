@@ -55,7 +55,7 @@ public class EventController {
         return ResponseEntity.noContent().build();
     }
 
-    @PatchMapping("/draft-event/{id}")
+    @PostMapping("/draft-event/{id}")
     public ResponseEntity<Event> draftEvent(@PathVariable Long id) {
         return ResponseEntity.ok(eventService.draft(id));
     }
