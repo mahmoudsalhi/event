@@ -197,6 +197,28 @@ public class EmailService {
     }
 
     /**
+     * Sends an event cancellation email to a registrant.
+     */
+    public void sendEventCancellation(String toEmail, String userName,
+                                       String eventTitle, LocalDateTime eventDate,
+                                       String eventLocation) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromEmail);
+        message.setTo(toEmail);
+        message.setSubject("Event Cancelled: " + eventTitle + " - MiNoLingo");
+        message.setText(
+            "Hi " + userName + ",\n\n" +
+            "We're sorry to inform you that the following event has been cancelled:\n\n" +
+            "📌 Event: " + eventTitle + "\n" +
+            "📅 Date: " + formatEventDate(eventDate) + "\n" +
+            "📍 Location: " + (eventLocation != null ? eventLocation : "N/A") + "\n\n" +
+            "We apologize for any inconvenience. Keep an eye out for future events on MiNoLingo!\n\n" +
+            "— The MiNoLingo Team"
+        );
+        mailSender.send(message);
+    }
+
+    /**
      * Sends an admin announcement to a registrant.
      */
     public void sendAnnouncement(String toEmail, String userName,

@@ -254,6 +254,24 @@ public class EventRegistrationService {
         return position.intValue() + 1; // 1-based
     }
 
+    public void notifyEventCancellation(Long eventId) {
+        List<EventRegistration> registrations = registrationRepository.findByEventId(eventId);
+        Event event = eventRepository.findById(eventId).orElse(null);
+        if (event == null) return;
+        registrations.stream()
+                .filter(r -> r.getStatus() == RegistrationStatus.REGISTERED
+                          || r.getStatus() == RegistrationStatus.WAITLISTED
+                          || r.getStatus() == RegistrationStatus.CONFIRMED
+                          || r.getStatus() == RegistrationStatus.PENDING)
+                .forEach(r -> sendEmailSafely(() -> emailService.sendEventCancellation(
+                        r.getUserEmail(),
+                        r.getUserName() != null ? r.getUserName() : "there",
+                        event.getTitle(),
+                        event.getStartDate(),
+                        event.getLocation()
+                ), r.getUserEmail(), "cancellation"));
+    }
+
     public void sendAnnouncement(Long eventId, String subject, String body) {
         List<EventRegistration> registrations = registrationRepository.findByEventId(eventId);
         Event event = eventRepository.findById(eventId)

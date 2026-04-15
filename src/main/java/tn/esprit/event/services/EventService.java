@@ -1,6 +1,7 @@
 package tn.esprit.event.services;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import tn.esprit.event.entity.Event;
 import tn.esprit.event.entity.EventStatus;
@@ -9,10 +10,15 @@ import tn.esprit.event.repository.EventRepository;
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor
 public class EventService {
 
     private final EventRepository eventRepository;
+    private final EventRegistrationService registrationService;
+
+    public EventService(EventRepository eventRepository, @Lazy EventRegistrationService registrationService) {
+        this.eventRepository = eventRepository;
+        this.registrationService = registrationService;
+    }
 
     public Event create(Event event) {
         return eventRepository.save(event);
@@ -118,6 +124,7 @@ public class EventService {
             eventRepository.findById(id).ifPresent(e -> {
                 e.setStatus(EventStatus.CANCELLED);
                 eventRepository.save(e);
+                registrationService.notifyEventCancellation(id);
             });
         });
     }
