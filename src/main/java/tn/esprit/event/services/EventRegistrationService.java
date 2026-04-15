@@ -246,6 +246,14 @@ public class EventRegistrationService {
         return registrationRepository.findByStatus(RegistrationStatus.PENDING);
     }
 
+    public int getWaitlistPosition(Long registrationId) {
+        EventRegistration registration = registrationRepository.findById(registrationId)
+                .orElseThrow(() -> new RuntimeException("Registration not found: " + registrationId));
+        Long position = registrationRepository.findWaitlistPosition(
+                registration.getEvent().getId(), registration.getRegistrationDate());
+        return position.intValue() + 1; // 1-based
+    }
+
     public Double getAvgRating(Long eventId) {
         return registrationRepository.findAvgRatingByEventId(eventId);
     }

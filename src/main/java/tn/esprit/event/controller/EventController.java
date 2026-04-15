@@ -165,6 +165,13 @@ public class EventController {
         return ResponseEntity.ok(java.util.Map.of("message", "Rating email check triggered"));
     }
 
+    /** Waitlist position for a registration */
+    @GetMapping("/registrations/waitlist-position/{registrationId}")
+    public ResponseEntity<java.util.Map<String, Integer>> getWaitlistPosition(@PathVariable Long registrationId) {
+        int position = registrationService.getWaitlistPosition(registrationId);
+        return ResponseEntity.ok(java.util.Map.of("position", position));
+    }
+
     /** Average rating for an event */
     @GetMapping("/registrations/avg-rating/{eventId}")
     public ResponseEntity<java.util.Map<String, Object>> getAvgRating(@PathVariable Long eventId) {

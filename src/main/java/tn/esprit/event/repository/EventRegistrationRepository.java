@@ -38,6 +38,10 @@ public interface EventRegistrationRepository extends JpaRepository<EventRegistra
             @Param("now") LocalDateTime now,
             @Param("cutoff") LocalDateTime cutoff);
 
+    /** Waitlist position: count of WAITLISTED registrations for the same event registered before this one */
+    @Query("SELECT COUNT(r) FROM EventRegistration r WHERE r.event.id = :eventId AND r.status = 'WAITLISTED' AND r.registrationDate < :registrationDate")
+    Long findWaitlistPosition(@Param("eventId") Long eventId, @Param("registrationDate") LocalDateTime registrationDate);
+
     /** Average rating for an event (only counts non-null ratings) */
     @Query("SELECT AVG(r.rating) FROM EventRegistration r WHERE r.event.id = :eventId AND r.rating IS NOT NULL")
     Double findAvgRatingByEventId(@Param("eventId") Long eventId);
