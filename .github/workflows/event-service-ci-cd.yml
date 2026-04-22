@@ -129,6 +129,8 @@ jobs:
             docker run -d \
               --name event-service \
               --network minolingo-network \
+              -p 8096:8096 \
+              -e SERVER_PORT=8096 \
               -e SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/events \
               -e SPRING_DATASOURCE_USERNAME=${{ secrets.DB_USERNAME }} \
               -e SPRING_DATASOURCE_PASSWORD=${{ secrets.DB_PASSWORD }} \
