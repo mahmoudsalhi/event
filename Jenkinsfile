@@ -5,7 +5,7 @@ pipeline {
         jdk 'JDK17'
     }
     environment {
-        DOCKER_IMAGE = 'mah3300/event-backend'
+        DOCKER_IMAGE = 'mahmoud3331/event-backend'
         DOCKER_TAG = "${BUILD_NUMBER}"
         CONTAINER_NAME = 'event-backend-app'
     }
