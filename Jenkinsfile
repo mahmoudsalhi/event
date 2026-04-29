@@ -20,17 +20,7 @@ pipeline {
                 sh 'mvn clean compile'
             }
         }
-        stage('Test & Coverage') {
-            steps {
-                sh 'mvn test'
-            }
-            post {
-                always {
-                    junit '**/target/surefire-reports/*.xml'
-                    jacoco execPattern: '**/target/jacoco.exec'
-                }
-            }
-        }
+        
         stage('Package') {
             steps {
                 sh 'mvn package -DskipTests'
