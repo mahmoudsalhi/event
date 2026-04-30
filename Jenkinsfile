@@ -47,6 +47,13 @@ pipeline {
                 }
             }
         }
+        stage('Deploy') {
+            steps {
+                sh "docker stop ${CONTAINER_NAME} || true"
+                sh "docker rm ${CONTAINER_NAME} || true"
+                sh "docker run -d --name ${CONTAINER_NAME} --network devops-net -p 8082:8082 ${DOCKER_IMAGE}:latest"
+            }
+        }
 
     }
 
