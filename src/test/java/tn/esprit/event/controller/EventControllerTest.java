@@ -424,16 +424,6 @@ class EventControllerTest {
     // ══════════════════════════════════════════════════════
 
     @Test
-    void testSmsReminders_shouldReturn200() {
-        doNothing().when(reminderScheduler).sendUpcomingEventReminders();
-
-        ResponseEntity<?> response = controller.testSmsReminders();
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        verify(reminderScheduler).sendUpcomingEventReminders();
-    }
-
-    @Test
     void testRatingEmails_shouldReturn200() {
         doNothing().when(reminderScheduler).sendPostEventRatingEmails();
 

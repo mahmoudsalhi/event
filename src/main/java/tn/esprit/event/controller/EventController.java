@@ -182,13 +182,6 @@ public class EventController {
         }
     }
 
-    /** Test endpoint: manually trigger SMS reminders now */
-    @PostMapping("/test-sms-reminders")
-    public ResponseEntity<?> testSmsReminders() {
-        reminderScheduler.sendUpcomingEventReminders();
-        return ResponseEntity.ok(java.util.Map.of("message", "Reminder check triggered"));
-    }
-
     /** Test endpoint: manually trigger rating emails now */
     @PostMapping("/test-rating-emails")
     public ResponseEntity<?> testRatingEmails() {

@@ -58,14 +58,6 @@ public class EventRegistration {
     @Column(name = "requested_waitlist", nullable = false, columnDefinition = "boolean default false")
     private Boolean requestedWaitlist = false;
 
-    // ── SMS Reminder ─────────────────────────────────────
-    @Column(name = "phone_number")
-    private String phoneNumber;
-
-    @Column(name = "sms_reminder_sent")
-    @Builder.Default
-    private Boolean smsReminderSent = false;
-
     // ── Event Rating ─────────────────────────────────────
     @Column(name = "rating")
     private Integer rating; // 1-5 stars, null = not rated

@@ -51,9 +51,6 @@ jobs:
           SPRING_DATASOURCE_PASSWORD: mahmoud123
           EUREKA_CLIENT_REGISTERWITHEUREKA: false
           EUREKA_CLIENT_FETCHREGISTRY: false
-          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
-          TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
-          TWILIO_PHONE_NUMBER: ${{ secrets.TWILIO_PHONE_NUMBER }}
 
       - name: Upload JAR artifact
         uses: actions/upload-artifact@v4
@@ -134,8 +131,5 @@ jobs:
               -e SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/events \
               -e SPRING_DATASOURCE_USERNAME=${{ secrets.DB_USERNAME }} \
               -e SPRING_DATASOURCE_PASSWORD=${{ secrets.DB_PASSWORD }} \
-              -e TWILIO_ACCOUNT_SID=${{ secrets.TWILIO_ACCOUNT_SID }} \
-              -e TWILIO_AUTH_TOKEN=${{ secrets.TWILIO_AUTH_TOKEN }} \
-              -e TWILIO_PHONE_NUMBER=${{ secrets.TWILIO_PHONE_NUMBER }} \
               --restart unless-stopped \
               ${{ secrets.DOCKERHUB_USERNAME }}/event-service:latest
