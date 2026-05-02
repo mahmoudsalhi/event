@@ -51,7 +51,17 @@ pipeline {
             steps {
                 sh "docker stop ${CONTAINER_NAME} || true"
                 sh "docker rm ${CONTAINER_NAME} || true"
-                sh "docker run -d --name ${CONTAINER_NAME} --network devops-net -p 8082:8082 ${DOCKER_IMAGE}:latest"
+                sh """docker run -d \
+                    --name ${CONTAINER_NAME} \
+                    --network devops-net \
+                    -p 8082:8082 \
+                    -e SPRING_DATASOURCE_URL=jdbc:postgresql://51.255.203.187:5432/events \
+                    -e SPRING_DATASOURCE_USERNAME=mahmoud \
+                    -e SPRING_DATASOURCE_PASSWORD=mahmoud123 \
+                    -e SPRING_JPA_HIBERNATE_DDL_AUTO=update \
+                    -e EUREKA_CLIENT_REGISTER_WITH_EUREKA=false \
+                    -e EUREKA_CLIENT_FETCH_REGISTRY=false \
+                    ${DOCKER_IMAGE}:latest"""
             }
         }
 

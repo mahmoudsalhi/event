@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node generate_dataset.js 10000 dataset.csv)"
+    ]
+  }
+}
