@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: event-backend
+  labels:
+    app: event-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: event-backend
+  template:
+    metadata:
+      labels:
+        app: event-backend
+    spec:
+      containers:
+        - name: event-backend
+          image: mahmoud3331/event-backend:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8082
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://51.255.203.187:5432/events
+            - name: SPRING_DATASOURCE_USERNAME
+              value: mahmoud
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: mahmoud123
+            - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+              value: update
+            - name: EUREKA_CLIENT_REGISTER_WITH_EUREKA
+              value: "false"
+            - name: EUREKA_CLIENT_FETCH_REGISTRY
+              value: "false"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8082
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8082
+            initialDelaySeconds: 30
+            periodSeconds: 10

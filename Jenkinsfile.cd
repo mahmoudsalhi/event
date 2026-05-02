@@ -5,35 +5,43 @@ pipeline {
     }
     environment {
         DOCKER_IMAGE = 'mahmoud3331/event-backend'
-        CONTAINER_NAME = 'event-backend-app'
     }
     stages {
-        stage('Pull Image') {
+        stage('Checkout') {
             steps {
-                sh "docker pull ${DOCKER_IMAGE}:${params.IMAGE_TAG}"
+                checkout scm
             }
         }
-        stage('Deploy') {
+        stage('Setup kubectl') {
             steps {
-                sh "docker stop ${CONTAINER_NAME} || true"
-                sh "docker rm ${CONTAINER_NAME} || true"
-                sh """docker run -d \
-                    --name ${CONTAINER_NAME} \
-                    --network devops-net \
-                    -p 8082:8082 \
-                    -e SPRING_DATASOURCE_URL=jdbc:postgresql://51.255.203.187:5432/events \
-                    -e SPRING_DATASOURCE_USERNAME=mahmoud \
-                    -e SPRING_DATASOURCE_PASSWORD=mahmoud123 \
-                    -e SPRING_JPA_HIBERNATE_DDL_AUTO=update \
-                    -e EUREKA_CLIENT_REGISTER_WITH_EUREKA=false \
-                    -e EUREKA_CLIENT_FETCH_REGISTRY=false \
-                    ${DOCKER_IMAGE}:${params.IMAGE_TAG}"""
+                sh '''
+                    if [ ! -f ./kubectl ]; then
+                        curl -LO https://dl.k8s.io/release/v1.31.0/bin/linux/amd64/kubectl
+                        chmod +x kubectl
+                    fi
+                    ./kubectl version --client
+                '''
             }
         }
-        stage('Health Check') {
+        stage('Deploy to Kubernetes') {
             steps {
-                sh 'sleep 15'
-                sh 'docker ps | grep ${CONTAINER_NAME}'
+                withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
+                    sh """
+                        ./kubectl apply -f k8s/
+                        ./kubectl set image deployment/event-backend event-backend=${DOCKER_IMAGE}:${params.IMAGE_TAG}
+                        ./kubectl rollout status deployment/event-backend --timeout=3m
+                    """
+                }
+            }
+        }
+        stage('Verify') {
+            steps {
+                withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
+                    sh '''
+                        ./kubectl get pods -l app=event-backend
+                        ./kubectl get svc event-backend
+                    '''
+                }
             }
         }
     }
