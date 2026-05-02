@@ -15,12 +15,16 @@ pipeline {
                 checkout scm
             }
         }
-        stage('Build') {
+        stage('Build & Test') {
             steps {
-                sh 'mvn clean compile'
+                sh 'mvn clean test'
+            }
+            post {
+                always {
+                    junit allowEmptyResults: true, testResults: 'target/surefire-reports/*.xml'
+                }
             }
         }
-        
         stage('Package') {
             steps {
                 sh 'mvn package -DskipTests'
@@ -29,7 +33,10 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('SonarQube') {
-                    sh 'mvn sonar:sonar -Dsonar.projectKey=event-backend -Dsonar.projectName=event-backend'
+                    sh '''mvn sonar:sonar \
+                        -Dsonar.projectKey=event-backend \
+                        -Dsonar.projectName=event-backend \
+                        -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml'''
                 }
             }
         }
