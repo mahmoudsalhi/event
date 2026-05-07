@@ -29,7 +29,7 @@ pipeline {
                     sh """
                         ./kubectl apply -f k8s/
                         ./kubectl set image deployment/event-backend event-backend=${DOCKER_IMAGE}:${params.IMAGE_TAG}
-                        ./kubectl rollout status deployment/event-backend --timeout=3m
+                        ./kubectl rollout status deployment/event-backend --timeout=5m
                     """
                 }
             }
