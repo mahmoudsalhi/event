@@ -20,19 +20,23 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 8082
+          envFrom:
+            - secretRef:
+                name: event-backend-db
           env:
-            - name: SPRING_DATASOURCE_URL
-              value: jdbc:postgresql://51.255.203.187:5432/events
-            - name: SPRING_DATASOURCE_USERNAME
-              value: mahmoud
-            - name: SPRING_DATASOURCE_PASSWORD
-              value: mahmoud123
             - name: SPRING_JPA_HIBERNATE_DDL_AUTO
               value: update
             - name: EUREKA_CLIENT_REGISTER_WITH_EUREKA
               value: "false"
             - name: EUREKA_CLIENT_FETCH_REGISTRY
               value: "false"
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
           livenessProbe:
             httpGet:
               path: /actuator/health
